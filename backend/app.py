@@ -17,13 +17,15 @@ from collections import defaultdict
 from models import EnhancedExpenseClassifier
 import pdfplumber
 import PyPDF2
+import database
+import hashlib
 
 app = Flask(__name__)
 CORS(app)
 
-# In-memory storage for expenses (replace with database in production)
-expenses_db = []
-expense_id_counter = 1
+# Persistent JSON storage for users, trips, and expenses
+expenses_db = database.get_expenses()
+expense_id_counter = max([e['id'] for e in expenses_db], default=0) + 1
 
 # Configure Tesseract path (update this path based on your installation)
 # For Windows, try these common paths:
@@ -75,7 +77,17 @@ class BillExtractor:
                         self.tfidf_vectorizer = joblib.load(tfidf_path)
                         self.feature_scaler = joblib.load(scaler_path)
                         self.enhanced_features = True
-                        print("✅ Enhanced expense model with TF-IDF loaded successfully!")
+                        
+                        numeric_features_list = [
+                            'Amount', 'LogAmount', 'AmountRange', 'TextLength', 'WordCount',
+                            'UpperCaseRatio', 'DigitRatio', 'food_keywords', 'transport_keywords',
+                            'bills_keywords', 'shopping_keywords', 'health_keywords', 'entertainment_keywords',
+                            'HasAmountPattern', 'HasTimePattern', 'HasPlacePattern'
+                        ]
+                        self.classifier_wrapper = EnhancedExpenseClassifier(
+                            self.expense_model, self.tfidf_vectorizer, self.feature_scaler, numeric_features_list
+                        )
+                        print("✅ Enhanced expense model with TF-IDF and classifier wrapper loaded successfully!")
                     else:
                         self.tfidf_vectorizer = None
                         self.feature_scaler = None
@@ -907,33 +919,13 @@ class BillExtractor:
             return rule_based_category
         
         try:
-            if self.enhanced_features and self.tfidf_vectorizer and self.feature_scaler:
-                # Enhanced prediction with TF-IDF and additional features
-                print(f"🤖 Using enhanced ML model for '{description[:50]}...'")
-                
-                # Clean text
-                def clean_text(text):
-                    text = str(text).lower()
-                    text = re.sub(r'[^\w\s]', ' ', text)
-                    return ' '.join(text.split())
-                
-                description_clean = clean_text(description)
-                
-                # Create enhanced features
-                text_features = self.tfidf_vectorizer.transform([description_clean])
-                
-                # Numeric features (same as training)
-                log_amount = np.log1p(amount)
-                word_count = len(description_clean.split())
-                numeric_features = np.array([[amount, log_amount, word_count]])
-                numeric_scaled = self.feature_scaler.transform(numeric_features)
-                
-                # Combine features
-                from scipy.sparse import hstack
-                X_combined = hstack([text_features, numeric_scaled])
-                
-                # Predict
-                ml_category = self.expense_model.predict(X_combined)[0]
+            if self.enhanced_features and hasattr(self, 'classifier_wrapper'):
+                print(f"🤖 Using enhanced ML model classifier wrapper for '{description[:50]}...'")
+                prediction_data = {
+                    'Note': description,
+                    'Amount': amount
+                }
+                ml_category = self.classifier_wrapper.predict(prediction_data)
                 print(f"🤖 Enhanced ML prediction: '{ml_category}'")
                 return ml_category
                 
@@ -1222,6 +1214,12 @@ class BillExtractor:
                 'chicken', 'food', 'restaurant', 'dining', 'meal', 'naan', 'curry', 'rice'
             ]):
                 return 'Bills & Utilities'
+        
+        # Accommodation
+        if any(word in description_lower for word in [
+            'hotel', 'motel', 'resort', 'stay', 'accommodation', 'hostel', 'airbnb', 'lodging', 'room rent'
+        ]):
+            return 'Accommodation'
         
         # Healthcare
         if any(word in description_lower for word in [
@@ -1556,6 +1554,167 @@ class BillExtractor:
                 'error': str(e)
             }
 
+# Auth endpoints
+@app.route('/api/register', methods=['POST'])
+def register():
+    """Register a new user"""
+    try:
+        data = request.json
+        username = data.get('username', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not username or not password:
+            return jsonify({'error': 'Username and password are required'}), 400
+            
+        users = database.get_users()
+        if username in users:
+            return jsonify({'error': 'Username already exists'}), 400
+            
+        # Hash the password for security
+        password_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        
+        users[username] = {
+            'username': username,
+            'password_hash': password_hash,
+            'createdAt': datetime.now().isoformat()
+        }
+        database.save_users(users)
+        
+        return jsonify({
+            'success': True,
+            'message': 'User registered successfully',
+            'user': {
+                'username': username
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Authenticate a user"""
+    try:
+        data = request.json
+        username = data.get('username', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not username or not password:
+            return jsonify({'error': 'Username and password are required'}), 400
+            
+        users = database.get_users()
+        if username not in users:
+            return jsonify({'error': 'Invalid username or password'}), 401
+            
+        password_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        if users[username]['password_hash'] != password_hash:
+            return jsonify({'error': 'Invalid username or password'}), 401
+            
+        return jsonify({
+            'success': True,
+            'message': 'Login successful',
+            'user': {
+                'username': username
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Trip endpoints
+@app.route('/api/trips', methods=['GET', 'POST'])
+def trips():
+    """Get all trips or create a new trip"""
+    try:
+        trips_list = database.get_trips()
+        
+        if request.method == 'POST':
+            data = request.json
+            destination = data.get('destination', '').strip()
+            budget = data.get('budget', 0)
+            start_date = data.get('startDate', '').strip()
+            end_date = data.get('endDate', '').strip()
+            participants = data.get('participants', [])
+            created_by = data.get('createdBy', '').strip()
+            
+            if not destination:
+                return jsonify({'error': 'Destination is required'}), 400
+            try:
+                budget = float(budget)
+                if budget < 0:
+                    return jsonify({'error': 'Budget cannot be negative'}), 400
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Budget must be a valid number'}), 400
+                
+            # Create a unique ID for the trip
+            trip_id = max([t['id'] for t in trips_list], default=0) + 1
+            
+            # Format participants list (ensure clean string elements and include createdBy if not present)
+            cleaned_participants = []
+            for p in participants:
+                if isinstance(p, str) and p.strip():
+                    cleaned_participants.append(p.strip())
+            
+            if created_by and created_by not in cleaned_participants:
+                cleaned_participants.insert(0, created_by)
+                
+            new_trip = {
+                'id': trip_id,
+                'destination': destination,
+                'budget': budget,
+                'startDate': start_date,
+                'endDate': end_date,
+                'participants': cleaned_participants,
+                'createdBy': created_by,
+                'createdAt': datetime.now().isoformat()
+            }
+            
+            trips_list.append(new_trip)
+            database.save_trips(trips_list)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Trip created successfully',
+                'trip': new_trip
+            })
+            
+        else:
+            # GET request
+            username = request.args.get('username')
+            # If username is provided, filter trips where they created it or are a participant
+            if username:
+                filtered_trips = [t for t in trips_list if t.get('createdBy') == username or username in t.get('participants', [])]
+            else:
+                filtered_trips = trips_list
+                
+            return jsonify({
+                'success': True,
+                'trips': filtered_trips
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trips/<int:trip_id>', methods=['DELETE'])
+def delete_trip(trip_id):
+    """Delete a trip and remove its association from expenses"""
+    global expenses_db
+    try:
+        trips_list = database.get_trips()
+        trips_list = [t for t in trips_list if t['id'] != trip_id]
+        database.save_trips(trips_list)
+        
+        # Remove association from expenses
+        for expense in expenses_db:
+            if expense.get('tripId') == trip_id:
+                expense['tripId'] = None
+        database.save_expenses(expenses_db)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Trip deleted successfully'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Initialize the bill extractor
 bill_extractor = BillExtractor()
 
@@ -1655,6 +1814,14 @@ def expenses():
                 if field == 'category' and not data[field].strip():
                     return jsonify({'error': 'Category cannot be empty'}), 400
             
+            # Parse trip ID
+            trip_id = data.get('tripId')
+            if trip_id is not None:
+                try:
+                    trip_id = int(trip_id)
+                except ValueError:
+                    trip_id = None
+
             # Create expense object
             expense = {
                 'id': expense_id_counter,
@@ -1664,12 +1831,16 @@ def expenses():
                 'category': data['category'],
                 'date': data['date'],
                 'items': data.get('items', []),
+                'tripId': trip_id,
+                'paidBy': data.get('paidBy'),
+                'isMedical': bool(data.get('isMedical', False)),
                 'createdAt': datetime.now().isoformat()
             }
             
             # Add to database
             expenses_db.append(expense)
             expense_id_counter += 1
+            database.save_expenses(expenses_db)
             
             print(f"💾 Added expense: {expense['vendor']} - {expense['currency']} {expense['amount']}")
             
@@ -1684,9 +1855,18 @@ def expenses():
             start_date = request.args.get('start_date')
             end_date = request.args.get('end_date')
             category = request.args.get('category')
+            trip_id = request.args.get('tripId')
             
             filtered_expenses = expenses_db.copy()
             
+            # Apply trip filter
+            if trip_id:
+                try:
+                    trip_id_int = int(trip_id)
+                    filtered_expenses = [e for e in filtered_expenses if e.get('tripId') == trip_id_int]
+                except ValueError:
+                    pass
+
             # Apply date filters
             if start_date:
                 filtered_expenses = [e for e in filtered_expenses if str(e.get('date', '')) >= start_date]
@@ -1715,6 +1895,7 @@ def delete_expense(expense_id):
     try:
         # Find and remove expense
         expenses_db = [e for e in expenses_db if e['id'] != expense_id]
+        database.save_expenses(expenses_db)
         
         return jsonify({
             'success': True,
@@ -1799,6 +1980,7 @@ def clear_expenses():
     global expenses_db
     try:
         expenses_db = []
+        database.save_expenses(expenses_db)
         return jsonify({
             'success': True,
             'message': 'All expenses cleared'

@@ -1,8 +1,7 @@
-import React, { useRef, useState } from "react";
-import { UploadCloud, CheckCircle, AlertCircle, Calendar, Clock, FileText, Image, Edit3, Plus } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { UploadCloud, CheckCircle, AlertCircle, Calendar, Clock, FileText, Image, Edit3, Plus, Compass } from "lucide-react";
 import { motion } from "framer-motion";
 import { getCurrentLocalDate, formatDisplayDate } from '../utils/dateUtils';
-
 
 export default function UploadCard() {
   const [extractedData, setExtractedData] = useState(null);
@@ -11,6 +10,13 @@ export default function UploadCard() {
   const [saved, setSaved] = useState(false);
   const [fileType, setFileType] = useState(null);
   const [manualEntry, setManualEntry] = useState(false);
+  
+  // Trips & fields for association
+  const [trips, setTrips] = useState([]);
+  const [selectedTripId, setSelectedTripId] = useState("");
+  const [selectedPaidBy, setSelectedPaidBy] = useState("");
+  const [isMedicalExpense, setIsMedicalExpense] = useState(false);
+
   const [manualData, setManualData] = useState({
     vendor: '',
     amount: '',
@@ -22,6 +28,7 @@ export default function UploadCard() {
 
   const categories = [
     'Food & Dining',
+    'Accommodation',
     'Shopping',
     'Transportation',
     'Bills & Utilities',
@@ -32,6 +39,43 @@ export default function UploadCard() {
     'Groceries',
     'Other'
   ];
+
+  // Fetch trips for association
+  const fetchTrips = async () => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (storedUser.username) {
+        const res = await fetch(`http://localhost:5000/api/trips?username=${storedUser.username}`);
+        const data = await res.json();
+        if (data.success) {
+          setTrips(data.trips);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load trips in UploadCard:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const handleTripChange = (tripId) => {
+    setSelectedTripId(tripId);
+    if (!tripId) {
+      setSelectedPaidBy("");
+      return;
+    }
+    const selectedTrip = trips.find(t => t.id === parseInt(tripId));
+    if (selectedTrip) {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (selectedTrip.participants.includes(storedUser.username)) {
+        setSelectedPaidBy(storedUser.username);
+      } else if (selectedTrip.participants.length > 0) {
+        setSelectedPaidBy(selectedTrip.participants[0]);
+      }
+    }
+  };
 
   const handleFile = async (file) => {
     if (!file) return;
@@ -57,9 +101,6 @@ export default function UploadCard() {
       const response = await fetch('http://localhost:5000/api/process-bill', {
         method: 'POST',
         body: formData,
-        headers: {
-          // Don't set Content-Type, let browser set it with boundary for FormData
-        }
       });
 
       if (!response.ok) {
@@ -143,13 +184,17 @@ export default function UploadCard() {
         }
       }
       
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const expenseData = {
         vendor: dataToSave.vendor,
         amount: parseFloat(dataToSave.amount) || dataToSave.total_amount,
         currency: dataToSave.currency || 'INR',
         category: dataToSave.category,
         date: validDate,
-        items: dataToSave.items || []
+        items: dataToSave.items || [],
+        tripId: selectedTripId ? parseInt(selectedTripId) : null,
+        paidBy: selectedTripId ? selectedPaidBy : (storedUser.username || null),
+        isMedical: isMedicalExpense
       };
       
       // Send to backend
@@ -173,6 +218,11 @@ export default function UploadCard() {
         setTimeout(() => {
           setSaved(false);
           setExtractedData(null);
+          // Reset states
+          setSelectedTripId("");
+          setSelectedPaidBy("");
+          setIsMedicalExpense(false);
+          
           if (manualEntry) {
             setManualData({
               vendor: '',
@@ -199,6 +249,9 @@ export default function UploadCard() {
     setManualEntry(!manualEntry);
     setExtractedData(null);
     setError("");
+    setSelectedTripId("");
+    setSelectedPaidBy("");
+    setIsMedicalExpense(false);
     if (!manualEntry) {
       setManualData({
         vendor: '',
@@ -216,8 +269,10 @@ export default function UploadCard() {
     if (file) handleFile(file);
   };
 
+  const selectedTrip = trips.find(t => t.id === parseInt(selectedTripId));
+
   return (
-    <motion.div className="bg-white rounded-xl shadow p-6 flex flex-col gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="bg-white rounded-xl shadow p-6 flex flex-col gap-4 text-gray-800" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       {/* System Status and Date Info */}
       <div className="mb-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <div className="flex items-center justify-between">
@@ -236,7 +291,7 @@ export default function UploadCard() {
         </div>
         <p className="text-xs text-blue-600 mt-1">
           📅 Today: {getCurrentLocalDate()} | 
-          Receipts without a detected date Model will use today's date by default.
+          Receipts without a detected date will default to today.
         </p>
       </div>
       
@@ -332,6 +387,55 @@ export default function UploadCard() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            {/* Associate with Trip */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Associate with Trip (Optional)
+              </label>
+              <select
+                value={selectedTripId}
+                onChange={(e) => handleTripChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">None (Personal)</option>
+                {trips.map(t => (
+                  <option key={t.id} value={t.id}>{t.destination} ({t.startDate})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Paid By (Only show if trip selected) */}
+            {selectedTripId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Paid By
+                </label>
+                <select
+                  value={selectedPaidBy}
+                  onChange={(e) => setSelectedPaidBy(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {selectedTrip?.participants.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Is Medical checkbox */}
+          <div className="flex items-center gap-2 py-2">
+            <input
+              type="checkbox"
+              id="isMedicalManual"
+              checked={isMedicalExpense}
+              onChange={(e) => setIsMedicalExpense(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="isMedicalManual" className="text-sm font-medium text-gray-700 select-none">
+              🚑 Mark as Medical Expense
+            </label>
           </div>
           
           {/* Add Button for Manual Entry */}
@@ -420,7 +524,7 @@ export default function UploadCard() {
       
       {/* Extracted Data Display */}
       {extractedData && !manualEntry && (
-        <div className="space-y-4">
+        <div className="space-y-4 p-4 border border-green-200 rounded-lg bg-green-50/20">
           <div className="flex items-center gap-2 text-green-600">
             <CheckCircle size={16} />
             <span className="font-semibold">Bill processed successfully!</span>
@@ -476,11 +580,59 @@ export default function UploadCard() {
                         </>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500">Raw: {dateInfo.raw}</p>
                   </div>
                 );
               })()}
             </div>
+
+            {/* Associate with Trip dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Associate with Trip
+              </label>
+              <select
+                value={selectedTripId}
+                onChange={(e) => handleTripChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">None (Personal)</option>
+                {trips.map(t => (
+                  <option key={t.id} value={t.id}>{t.destination} ({t.startDate})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Paid By dropdown */}
+            {selectedTripId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Paid By
+                </label>
+                <select
+                  value={selectedPaidBy}
+                  onChange={(e) => setSelectedPaidBy(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  {selectedTrip?.participants.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Is Medical checkbox */}
+          <div className="flex items-center gap-2 py-1">
+            <input
+              type="checkbox"
+              id="isMedicalOcr"
+              checked={isMedicalExpense}
+              onChange={(e) => setIsMedicalExpense(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="isMedicalOcr" className="text-sm font-medium text-gray-700 select-none">
+              🚑 Mark as Medical Expense
+            </label>
           </div>
           
           {extractedData.items && extractedData.items.length > 0 && (

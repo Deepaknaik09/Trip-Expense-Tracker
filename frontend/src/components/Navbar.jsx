@@ -3,8 +3,11 @@ import { UserCircle } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 
 export default function Navbar() {
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{"username": "User"}');
+  const username = storedUser.username || "User";
+
   return (
-    <nav className="flex items-center justify-between h-16 px-6 bg-white shadow-sm">
+    <nav className="flex items-center justify-between h-16 px-6 bg-white shadow-sm text-gray-800">
       <div className="flex items-center gap-2">
         {/* React logo SVG */}
         <svg height="32" width="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -20,9 +23,9 @@ export default function Navbar() {
       
       <div className="flex items-center gap-4">
         <StatusIndicator />
-        <span className="text-gray-600">Hello, User</span>
-        <button className="rounded-full p-2 hover:bg-gray-100 transition">
-          <UserCircle size={28} />
+        <span className="text-gray-600 font-medium">Hello, {username}</span>
+        <button className="rounded-full p-2 hover:bg-gray-100 transition" title={username}>
+          <UserCircle size={28} className="text-gray-600" />
         </button>
       </div>
     </nav>
