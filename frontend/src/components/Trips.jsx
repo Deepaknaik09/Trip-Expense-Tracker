@@ -123,123 +123,120 @@ export default function Trips({ user, onSelectTrip }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">My Trips</h1>
-          <p className="text-gray-600 text-sm">Manage budgets, expenses, and split contributions for your travels.</p>
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2.5">
+            <Compass size={22} className="text-indigo-500" />
+            My Trips
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Manage budgets and track expenses for your travels</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold shadow-md active:scale-[0.98] transition-all"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm shadow-indigo-200 active:scale-[0.98] transition-all text-sm"
         >
-          <Plus size={18} />
-          Create Trip
+          <Plus size={16} />
+          New Trip
         </button>
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+        <div className="flex justify-center items-center py-24">
+          <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full" />
         </div>
       ) : trips.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center max-w-xl mx-auto mt-8">
-          <div className="inline-flex p-4 bg-blue-50 text-blue-600 rounded-full mb-4">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center">
+          <div className="inline-flex p-4 bg-indigo-50 text-indigo-500 rounded-2xl mb-4">
             <Compass size={32} />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">No trips created yet</h2>
-          <p className="text-gray-600 mb-6">Create a trip to set a budget, add trip-specific receipts, and calculate how to split expenses with friends.</p>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">No trips yet</h2>
+          <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">Create a trip to set a budget, add trip-specific receipts, and split expenses with your travel companions.</p>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-semibold text-sm shadow-sm shadow-indigo-200 transition"
           >
             Create Your First Trip
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {trips.map((trip) => {
             const spent = getTripSpent(trip.id);
             const budgetPercent = trip.budget > 0 ? (spent / trip.budget) * 100 : 0;
-            
-            // Determine warning state
             let alertMessage = "";
-            let progressColor = "bg-green-600";
-            if (spent >= trip.budget) {
-              alertMessage = "Budget Exceeded!";
-              progressColor = "bg-red-600";
-            } else if (budgetPercent >= 80) {
-              alertMessage = "Approaching Budget limit! (>80%)";
-              progressColor = "bg-orange-500";
-            }
+            let barColor = "bg-emerald-500";
+            if (spent >= trip.budget) { alertMessage = "Budget Exceeded"; barColor = "bg-rose-500"; }
+            else if (budgetPercent >= 80) { alertMessage = "Near Limit"; barColor = "bg-amber-400"; }
 
             return (
               <motion.div
                 key={trip.id}
                 onClick={() => onSelectTrip(trip.id)}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all flex flex-col justify-between group relative overflow-hidden"
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all flex flex-col gap-4 group relative overflow-hidden"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -3 }}
+                whileHover={{ y: -2 }}
               >
-                {/* Header info */}
-                <div>
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="text-blue-600 shrink-0" size={18} />
-                      <h3 className="font-bold text-lg text-gray-800 group-hover:text-blue-700 transition">
-                        {trip.destination}
-                      </h3>
-                    </div>
-                    <button
-                      onClick={(e) => handleDeleteTrip(trip.id, e)}
-                      className="text-gray-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition shrink-0"
-                      title="Delete Trip"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                {/* Top accent line */}
+                <div className={`absolute top-0 left-0 right-0 h-1 ${barColor} opacity-70 rounded-t-2xl`} />
 
-                  {/* Date and Participants info */}
-                  <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={14} className="text-gray-400" />
-                      <span>{trip.startDate} to {trip.endDate}</span>
+                {/* Header */}
+                <div className="flex justify-between items-start pt-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                      <MapPin size={15} className="text-indigo-500" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users size={14} className="text-gray-400" />
-                      <span>{trip.participants?.length || 1} participant(s)</span>
-                    </div>
+                    <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                      {trip.destination}
+                    </h3>
                   </div>
+                  <button
+                    onClick={(e) => handleDeleteTrip(trip.id, e)}
+                    className="text-slate-300 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-50 transition-all"
+                    title="Delete Trip"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
 
-                {/* Budget Tracker */}
-                <div className="mt-4 pt-4 border-t border-gray-50 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Spent: ₹{spent.toLocaleString()}</span>
-                    <span className="text-gray-700 font-bold">Budget: ₹{trip.budget.toLocaleString()}</span>
+                {/* Date and participants */}
+                <div className="flex items-center gap-4 text-xs text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Calendar size={11} />
+                    {trip.startDate} → {trip.endDate}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users size={11} />
+                    {trip.participants?.length || 1} traveler{(trip.participants?.length || 1) !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                {/* Budget tracker */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-slate-500">₹{spent.toLocaleString('en-IN', { maximumFractionDigits: 0 })} spent</span>
+                    <span className="text-slate-700">₹{trip.budget.toLocaleString('en-IN', { maximumFractionDigits: 0 })} budget</span>
                   </div>
-                  
-                  {/* Progress bar */}
-                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                     <div
-                      className={`${progressColor} h-full rounded-full transition-all`}
+                      className={`${barColor} h-full rounded-full transition-all`}
                       style={{ width: `${Math.min(budgetPercent, 100)}%` }}
                     />
                   </div>
-
-                  {/* Warning label */}
                   {alertMessage && (
-                    <div className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded mt-2 ${
-                      spent >= trip.budget ? "bg-red-50 text-red-700" : "bg-orange-50 text-orange-700"
+                    <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl ${
+                      spent >= trip.budget ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
                     }`}>
-                      <AlertTriangle size={12} />
-                      <span>{alertMessage}</span>
+                      <AlertTriangle size={11} />
+                      {alertMessage}
                     </div>
                   )}
                 </div>
               </motion.div>
             );
           })}
+        </div>
+      )}
         </div>
       )}
 
