@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timedelta
 import dateutil.parser as date_parser
 import joblib
-import os
+import os                                       
 from PIL import Image
 import io
 import base64
@@ -24,7 +24,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Persistent JSON storage for users, trips, and expenses
-expenses_db = database.get_expenses()
+expenses_db = database.get_expenses()            
 expense_id_counter = max([e['id'] for e in expenses_db], default=0) + 1
 
 # Configure Tesseract path (update this path based on your installation)
