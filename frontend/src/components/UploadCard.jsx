@@ -112,16 +112,10 @@ export default function UploadCard() {
 
       if (result.success) {
         if (result.manual_entry_required) {
-          // Handle manual entry case
-          setExtractedData({
-            ...result,
-            vendor: 'Enter vendor name',
-            amount: 0,
-            category: 'Select category',
-            date: getCurrentLocalDate(),
-            items: ['Manual entry required - Install Tesseract OCR for automatic extraction']
-          });
-          setError('⚠️ Tesseract OCR not installed. Please enter details manually or install Tesseract for automatic extraction.');
+          // Automatically switch to manual entry
+          setExtractedData(null);
+          setManualEntry(true);
+          setError('⚠️ Tesseract OCR not installed. Please enter details manually.');
         } else {
           // Normal OCR extraction
           setExtractedData(result);
