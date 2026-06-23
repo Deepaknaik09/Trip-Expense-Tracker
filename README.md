@@ -221,8 +221,8 @@ Data Parsing → ML Categorization → Results Display
 
 ### 1️ Clone the Repository  
 ```bash
-git clone https://github.com/your-username/expense-tracker-ocr-ml.git
-cd expense-tracker-ocr-ml
+git clone https://github.com/Deepaknaik09/SmartSpend.git
+cd SmartSpend
 ```
 ### 2️ Backend Setup
 ```bash
