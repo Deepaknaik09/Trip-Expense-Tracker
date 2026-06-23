@@ -73,7 +73,7 @@ export default function Dashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/expenses");
+      const res = await fetch(`http://localhost:5000/api/expenses?_t=${Date.now()}`);
       const data = await res.json();
       if (data.success) {
         const expenses = data.expenses;

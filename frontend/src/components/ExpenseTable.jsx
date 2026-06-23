@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, RefreshCw, SlidersHorizontal, X } from "lucide-react";
+import { Search, RefreshCw, SlidersHorizontal, X, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDateInfo } from '../utils/dateUtils';
 
@@ -33,6 +33,7 @@ export default function ExpenseTable() {
       const params = new URLSearchParams();
       if (category && category !== 'All Categories') params.append('category', category);
       if (date) params.append('start_date', date);
+      params.append('_t', Date.now());
       const response = await fetch(`http://localhost:5000/api/expenses?${params}`);
       const data = await response.json();
       if (data.success) {
@@ -44,6 +45,20 @@ export default function ExpenseTable() {
       setError('Failed to connect to server');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this expense?")) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/expenses/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        window.dispatchEvent(new CustomEvent('expenseDeleted', { detail: { id } }));
+      } else {
+        alert("Failed to delete expense.");
+      }
+    } catch (err) {
+      alert("Error connecting to server.");
     }
   };
 
@@ -154,15 +169,15 @@ export default function ExpenseTable() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-              {["Paid By", "Amount", "Category", "Date"].map(h => (
-                <th key={h} className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#94a3b8" }}>{h}</th>
+              {["Paid By", "Amount", "Category", "Date", ""].map((h, i) => (
+                <th key={i} className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#94a3b8" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {loading ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center">
+                <td colSpan={5} className="px-6 py-12 text-center">
                   <div className="flex items-center justify-center gap-2 text-slate-400">
                     <RefreshCw className="animate-spin" size={16} />
                     <span>Loading expenses…</span>
@@ -171,7 +186,7 @@ export default function ExpenseTable() {
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center">
+                <td colSpan={5} className="px-6 py-12 text-center">
                   <p className="text-rose-500 text-sm mb-2">{error}</p>
                   <button onClick={fetchExpenses} className="px-4 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition">
                     Retry
@@ -180,7 +195,7 @@ export default function ExpenseTable() {
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-slate-400 text-sm">
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 text-sm">
                   {expenses.length === 0 ? 'No expenses yet. Add your first one!' : 'No expenses match your filters.'}
                 </td>
               </tr>
@@ -215,6 +230,15 @@ export default function ExpenseTable() {
                       <span className={`text-sm ${dateInfo.isToday ? 'text-indigo-600 font-medium' : 'text-slate-500'}`}>
                         {dateInfo.formatted}
                       </span>
+                    </td>
+                    <td className="px-6 py-3.5 text-right">
+                      <button
+                        onClick={() => handleDelete(expense.id)}
+                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        title="Delete expense"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 );

@@ -1,18 +1,5 @@
 [
   {
-    "id": 1,
-    "vendor": "dfghj",
-    "amount": 854.0,
-    "currency": "INR",
-    "category": "Food & Dining",
-    "date": "2026-06-23",
-    "items": [],
-    "tripId": null,
-    "paidBy": "abc",
-    "isMedical": true,
-    "createdAt": "2026-06-23T22:10:55.742148"
-  },
-  {
     "id": 2,
     "vendor": "ujk",
     "amount": 874.0,
@@ -63,18 +50,5 @@
     "paidBy": "Lekhan",
     "isMedical": false,
     "createdAt": "2026-06-23T23:30:29.885617"
-  },
-  {
-    "id": 6,
-    "vendor": "hotel",
-    "amount": 5000.0,
-    "currency": "INR",
-    "category": "Food & Dining",
-    "date": "2026-06-23",
-    "items": [],
-    "tripId": 1,
-    "paidBy": "Prajwal",
-    "isMedical": false,
-    "createdAt": "2026-06-23T23:31:52.332352"
   }
 ]

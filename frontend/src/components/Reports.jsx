@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Download, FileDown, Calendar, BarChart2, Receipt, TrendingDown } from "lucide-react";
+import { FileText, Download, FileDown, Calendar, BarChart2, Receipt, TrendingDown, Trash2 } from "lucide-react";
 
 const CATEGORY_COLORS = {
   "Food & Dining":    { bg: "#fff7ed", text: "#c2410c", border: "#fed7aa" },
@@ -30,7 +30,30 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
 
-  useEffect(() => { fetchExpenses(); }, []);
+  useEffect(() => {
+    fetchExpenses();
+    const handleExpenseChange = () => setTimeout(fetchExpenses, 500);
+    window.addEventListener('expenseAdded', handleExpenseChange);
+    window.addEventListener('expenseDeleted', handleExpenseChange);
+    return () => {
+      window.removeEventListener('expenseAdded', handleExpenseChange);
+      window.removeEventListener('expenseDeleted', handleExpenseChange);
+    };
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this expense?")) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/expenses/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        window.dispatchEvent(new CustomEvent('expenseDeleted', { detail: { id } }));
+      } else {
+        alert("Failed to delete expense.");
+      }
+    } catch (err) {
+      alert("Error connecting to server.");
+    }
+  };
 
   useEffect(() => {
     if (month) {
@@ -48,7 +71,7 @@ export default function Reports() {
   const fetchExpenses = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/expenses");
+      const res = await fetch(`http://localhost:5000/api/expenses?_t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         setExpenses(data.expenses || []);
@@ -277,8 +300,8 @@ export default function Reports() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  {["Date", "Paid By", "Category", "Amount"].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#94a3b8" }}>{h}</th>
+                  {["Date", "Paid By", "Category", "Amount", ""].map((h, i) => (
+                    <th key={i} className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#94a3b8" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -288,7 +311,7 @@ export default function Reports() {
                   return (
                     <tr
                       key={expense.id}
-                      className="transition-colors"
+                      className="transition-colors group"
                       style={{ borderBottom: "1px solid #f8fafc" }}
                       onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}
@@ -307,6 +330,15 @@ export default function Reports() {
                       </td>
                       <td className="px-6 py-3.5 font-semibold" style={{ color: "#059669" }}>
                         ₹{expense.amount.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-3.5 text-right">
+                        <button
+                          onClick={() => handleDelete(expense.id)}
+                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete expense"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </td>
                     </tr>
                   );
