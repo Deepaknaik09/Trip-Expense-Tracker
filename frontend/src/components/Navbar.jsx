@@ -18,7 +18,7 @@ export default function Navbar() {
             <ellipse rx="10" ry="4.5" cx="16" cy="16" transform="rotate(120 16 16)"/>
           </g>
         </svg>
-        <h1 className="text-xl font-bold tracking-tight">Smart Expense Tracker</h1>
+        <h1 className="text-xl font-bold tracking-tight">Trip Expense Tracker</h1>
       </div>
       
       <div className="flex items-center gap-4">

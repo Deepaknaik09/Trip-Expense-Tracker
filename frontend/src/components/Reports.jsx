@@ -92,7 +92,7 @@ export default function Reports() {
         </head>
         <body>
           <div class="header">
-            <h1>SmartSpend Expense Report</h1>
+            <h1>TripSpend Expense Report</h1>
             <h2>${month || 'All Time'}</h2>
           </div>
           <table>

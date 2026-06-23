@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { User, Lock, AlertCircle, ArrowRight } from "lucide-react";
 
 export default function Login({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false);
@@ -50,7 +48,7 @@ export default function Login({ onLogin }) {
       }
     } catch (err) {
       if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setError("❌ Cannot connect to backend. Please ensure the backend server is running on port 5000.");
+        setError("Cannot connect to backend. Please ensure the backend server is running on port 5000.");
       } else {
         setError(err.message || "Failed to authenticate.");
       }
@@ -60,141 +58,247 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-slate-900 overflow-hidden font-sans">
-      {/* Dynamic Background Blurs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500 opacity-20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-violet-600 opacity-25 blur-[120px] pointer-events-none" />
-      <div className="absolute top-[30%] right-[10%] w-[30%] h-[30%] rounded-full bg-fuchsia-500 opacity-15 blur-[100px] pointer-events-none" />
-
-      {/* Main Container */}
-      <motion.div 
-        className="w-full max-w-md p-8 m-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl z-10 text-white"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="text-center mb-8">
-          <motion.h1 
-            className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-200 to-fuchsia-400 bg-clip-text text-transparent"
-            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            style={{ backgroundSize: "200% auto" }}
-          >
-            SmartSpend
-          </motion.h1>
-          <p className="text-slate-400 text-sm mt-2">
-            ML-Powered Expense & Trip Tracker
+    <div style={{
+      minHeight: "100vh",
+      background: "#f0f2f5",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+      padding: "20px"
+    }}>
+      <div style={{
+        width: "100%",
+        maxWidth: "400px",
+        background: "#fff",
+        borderRadius: "8px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        padding: "40px 32px 32px",
+      }}>
+        {/* Logo & Title */}
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          <div style={{
+            width: "52px",
+            height: "52px",
+            background: "#4a90d9",
+            borderRadius: "10px",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "14px"
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
+            </svg>
+          </div>
+          <h1 style={{
+            fontSize: "22px",
+            fontWeight: "700",
+            color: "#1a1a2e",
+            margin: "0 0 4px",
+          }}>
+            Trip Expense Tracker
+          </h1>
+          <p style={{
+            fontSize: "13px",
+            color: "#888",
+            margin: 0,
+          }}>
+            Track and split your travel expenses
           </p>
         </div>
 
-        {/* Tab Selector */}
-        <div className="flex border border-white/10 p-1 rounded-lg bg-black/20 mb-6">
+        {/* Tab Switch */}
+        <div style={{
+          display: "flex",
+          marginBottom: "20px",
+          borderBottom: "2px solid #eee",
+        }}>
           <button
+            type="button"
             onClick={() => { setIsRegister(false); setError(""); }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
-              !isRegister 
-                ? "bg-white/10 text-white shadow-sm" 
-                : "text-slate-400 hover:text-white"
-            }`}
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              border: "none",
+              background: "none",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              color: !isRegister ? "#4a90d9" : "#999",
+              borderBottom: !isRegister ? "2px solid #4a90d9" : "2px solid transparent",
+              marginBottom: "-2px",
+              transition: "color 0.2s",
+            }}
           >
-            Sign In
+            Login
           </button>
           <button
+            type="button"
             onClick={() => { setIsRegister(true); setError(""); }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
-              isRegister 
-                ? "bg-white/10 text-white shadow-sm" 
-                : "text-slate-400 hover:text-white"
-            }`}
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              border: "none",
+              background: "none",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              color: isRegister ? "#4a90d9" : "#999",
+              borderBottom: isRegister ? "2px solid #4a90d9" : "2px solid transparent",
+              marginBottom: "-2px",
+              transition: "color 0.2s",
+            }}
           >
-            Sign Up
+            Register
           </button>
         </div>
 
-        {/* Error message */}
+        {/* Error */}
         {error && (
-          <motion.div 
-            className="flex items-center gap-2 mb-4 p-3 bg-red-500/20 border border-red-500/30 text-red-200 rounded-lg text-sm"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <AlertCircle size={16} className="shrink-0" />
-            <span>{error}</span>
-          </motion.div>
+          <div style={{
+            padding: "10px 12px",
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
+            borderRadius: "6px",
+            color: "#b91c1c",
+            fontSize: "13px",
+            marginBottom: "16px",
+            lineHeight: "1.4",
+          }}>
+            {error}
+          </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{
+              display: "block",
+              fontSize: "13px",
+              fontWeight: "600",
+              color: "#444",
+              marginBottom: "6px"
+            }}>
               Username
             </label>
-            <div className="relative">
-              <User className="absolute left-3 top-2.5 text-slate-400" size={18} />
-              <input
-                type="text"
-                placeholder="johndoe"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-white/10 rounded-lg bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                fontSize: "14px",
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 0.2s",
+              }}
+              onFocus={(e) => e.target.style.borderColor = "#4a90d9"}
+              onBlur={(e) => e.target.style.borderColor = "#d1d5db"}
+            />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{
+              display: "block",
+              fontSize: "13px",
+              fontWeight: "600",
+              color: "#444",
+              marginBottom: "6px"
+            }}>
               Password
             </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-2.5 text-slate-400" size={18} />
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-white/10 rounded-lg bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </div>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                fontSize: "14px",
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 0.2s",
+              }}
+              onFocus={(e) => e.target.style.borderColor = "#4a90d9"}
+              onBlur={(e) => e.target.style.borderColor = "#d1d5db"}
+            />
           </div>
 
           {isRegister && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: "600",
+                color: "#444",
+                marginBottom: "6px"
+              }}>
                 Confirm Password
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 text-slate-400" size={18} />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-white/10 rounded-lg bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-              </div>
-            </motion.div>
+              <input
+                type="password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#4a90d9"}
+                onBlur={(e) => e.target.style.borderColor = "#d1d5db"}
+              />
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 mt-6 rounded-lg font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-indigo-500/20"
+            style={{
+              width: "100%",
+              padding: "11px 0",
+              background: "#4a90d9",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "15px",
+              fontWeight: "600",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.7 : 1,
+              marginTop: "8px",
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => { if (!loading) e.target.style.background = "#3a7bc8"; }}
+            onMouseLeave={(e) => { e.target.style.background = "#4a90d9"; }}
           >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                {isRegister ? "Create Account" : "Sign In"}
-                <ArrowRight size={18} />
-              </>
-            )}
+            {loading ? "Please wait..." : (isRegister ? "Create Account" : "Login")}
           </button>
         </form>
-      </motion.div>
+
+        {/* Footer text */}
+        <p style={{
+          textAlign: "center",
+          fontSize: "12px",
+          color: "#aaa",
+          marginTop: "24px",
+          marginBottom: 0,
+        }}>
+          Trip Expense Tracker &copy; {new Date().getFullYear()}
+        </p>
+      </div>
     </div>
   );
 }

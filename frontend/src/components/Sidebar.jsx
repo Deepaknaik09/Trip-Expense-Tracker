@@ -14,7 +14,7 @@ export default function Sidebar({ setPage, activePage, onLogout }) {
     <aside className="w-64 bg-white shadow-md h-full flex flex-col py-6">
       <div className="px-6 mb-8">
         <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          SmartSpend
+          TripSpend
         </span>
       </div>
       <nav className="flex-1 px-4">

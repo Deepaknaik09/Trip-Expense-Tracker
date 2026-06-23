@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "id": 1,
+    "vendor": "dfghj",
+    "amount": 854.0,
+    "currency": "INR",
+    "category": "Food & Dining",
+    "date": "2026-06-23",
+    "items": [],
+    "tripId": null,
+    "paidBy": "abc",
+    "isMedical": true,
+    "createdAt": "2026-06-23T22:10:55.742148"
+  },
+  {
+    "id": 2,
+    "vendor": "ujk",
+    "amount": 874.0,
+    "currency": "INR",
+    "category": "Travel",
+    "date": "2026-06-23",
+    "items": [],
+    "tripId": null,
+    "paidBy": "abc",
+    "isMedical": true,
+    "createdAt": "2026-06-23T22:11:22.151536"
+  }
+]
